@@ -10,7 +10,7 @@ sys.setdefaultencoding('UTF8')
 
 class PyWolf(object):
     def __init__(self):
-        self.AppId = 'H2YK4X-A73JKEPU6P'
+        self.AppId = '' # Please define your own API Id. You can get one for free at Wolfram|Alpha.
         self.PodState = '*Step-by-step solution'
         self.Start = open('WolfBegin.txt', 'rb').read()
         self.End = open('WolfEnd.txt', 'rb').read()
