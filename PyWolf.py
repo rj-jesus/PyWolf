@@ -4,6 +4,7 @@ import sys
 import urllib
 import urllib2
 import xml.etree.ElementTree as eT
+from xml.sax.saxutils import unescape
 reload(sys)
 sys.setdefaultencoding('UTF8')
 
@@ -12,8 +13,8 @@ class PyWolf(object):
     def __init__(self):
         self.AppId = '' # Please define your own API Id. You can get one for free at Wolfram|Alpha.
         self.PodState = '*Step-by-step solution'
-        self.Start = open('WolfBegin.txt', 'rb').read()
-        self.End = open('WolfEnd.txt', 'rb').read()
+        self.Start = self.hunescape('&lt;!DOCTYPE html&gt;&lt;html lang=&quot;en&quot;&gt;&lt;head&gt; &lt;meta charset=&quot;utf-8&quot;&gt; &lt;meta http-equiv=&quot;X-UA-Compatible&quot; content=&quot;IE=edge&quot;&gt; &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt; &lt;meta name=&quot;description&quot; content=&quot;&quot;&gt; &lt;meta name=&quot;author&quot; content=&quot;&quot;&gt; &lt;title&gt;PyWolf - A Python Wolfram|Alpha Query Service&lt;/title&gt; &lt;link href=&quot;/static/img/favicon.ico&quot; rel=&quot;shortcut icon&quot; type=&quot;image/x-icon&quot; /&gt;&lt;/head&gt;&lt;body style=&quot;text-align: center;&quot;&gt;')
+        self.End = self.hunescape('&lt;/body&gt;&lt;/html&gt;')
 
     @cherrypy.expose
     def index(self):
@@ -21,13 +22,8 @@ class PyWolf(object):
     
     @cherrypy.expose
     def query(self, input=None):
-        f = open('public_html/WolfOut.html', 'wb')
-        f.write(self.Start)
         xml = self.getXML(input)
-        self.writeHTML(xml, f)
-        f.write(self.End)
-        f.close()
-        return open('public_html/WolfOut.html', 'rb')
+        return self.Start + self.writeHTML(xml)
 
     def getXML(self, input):
         BaseURL = 'http://api.wolframalpha.com/v2/query?'
@@ -37,13 +33,21 @@ class PyWolf(object):
         req = urllib2.Request(BaseURL, Params, Headers)
         return urllib2.urlopen(req).read()
 
-    def writeHTML(self, xml, f):
+    def writeHTML(self, xml):
+        html = ''
         tree = eT.fromstring(xml)
         for pod in tree.iter('pod'):
-            f.write('<h2>' + pod.get('title') + '</h2>\n')
+            html += '<h2>' + pod.get('title') + '</h2>\n'
             for img in pod.iter('img'):
-                f.write('<img src=\"' + img.get('src') + '\" ' + 'alt=\"' + img.get('alt') + '\" />' + '\n')
-                f.write('<br>\n')
+                html += '<img src=\"' + img.get('src') + '\" ' + 'alt=\"' + img.get('alt') + '\" />' + '\n'
+        return html
+    
+    def hunescape(self, text):
+        table = {
+            "&quot;": '"',
+            "&apos;": "'"
+        }
+        return unescape(text, table)
 
 
 if __name__ == '__main__':
